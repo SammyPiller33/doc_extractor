@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from __future__ import annotations
 
 import argparse
@@ -7,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from dispatcher import create_dispatcher
+from parser.dispatcher import create_dispatcher
 
 VALID_TYPES = {"afp"}
 
@@ -40,14 +38,16 @@ def validate_args(args: argparse.Namespace) -> None:
 
 @dataclass(frozen=True)
 class CliInput:
-    path: Path
+    path: str
     filetype: Optional[str]
 
+    def __str__(self) -> str:
+        return f"Path : {self.path}, Type : {self.filetype}"
 
 def build_cli_input(args: argparse.Namespace) -> CliInput:
     validate_args(args)
     return CliInput(
-        path=Path(args.file),
+        path=args.file,
         filetype=args.type.lower(),
     )
 
@@ -57,15 +57,13 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     try:
         cli_input = build_cli_input(args)
-        print(f"Analyse du fichier '{cli_input.path}' en cours...")
-        print(f"{cli_input}")
+        print(cli_input)
     except ValueError as e:
         print(f"Erreur de paramètre : {e}")
         return 2
 
     dispatcher = create_dispatcher(cli_input.path).dispatch(cli_input.filetype)
     dispatcher.parse()
-
 
     return 0
 

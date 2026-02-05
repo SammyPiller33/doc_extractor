@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Dict
 
-from file_parser import FileParser
+from parser.common.file_parser import FileParser
 from afp_parser import AfpParser
 
 class ParserDispatcher:
