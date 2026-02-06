@@ -11,14 +11,14 @@ def run():
     file_size_mb = file_size_kb / 1024
 
     count = 0
-    for sf in sf_streamer.stream():
+    for _ in sf_streamer.stream():
         count += 1
 
     end_time = time.perf_counter()
     elapsed_time = end_time - start_time
 
     print(f"\n{'=' * 60}")
-    print(f"📊 STATISTIQUES DE PERFORMANCE")
+    print(f"STATISTIQUES DE PERFORMANCE")
     print(f"{'=' * 60}")
     print(f"Temps d'exécution:        {elapsed_time:.4f} secondes")
     print(f"Taille du fichier:        {file_size_kb:.2f} Ko ({file_size_mb:.2f} MB)")
