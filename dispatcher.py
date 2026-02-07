@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Dict
 
 from parser.common.file_parser import FileParser
-from afp_parser import AfpParser
+from parser.afp import SfStreamer
 
 class ParserDispatcher:
     """Route le traitement vers le bon parser en fonction du type logique."""
@@ -19,9 +19,9 @@ class ParserDispatcher:
 
         return parser
 
-def create_dispatcher(path: Path) -> ParserDispatcher:
+def create_dispatcher(path: str) -> ParserDispatcher:
     return ParserDispatcher(
         registry={
-            "afp": AfpParser(path)
+            "afp": SfStreamer(path)
         }
     )

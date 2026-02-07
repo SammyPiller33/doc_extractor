@@ -5,12 +5,14 @@ This module provides the SfStreamer class which allows efficient streaming and p
 of structured fields from AFP files using memory mapping for optimal performance.
 """
 
+from parser.common.file_parser import FileParser
+
 from pathlib import Path
-from sf_config import *
+from parser.afp.sf_config import *
 import mmap
 import struct
 
-class SfStreamer:
+class SfStreamer(FileParser):
     """
     Class for streaming structured fields from an AFP file.
 

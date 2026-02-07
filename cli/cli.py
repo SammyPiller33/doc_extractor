@@ -2,13 +2,11 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
+
 from pathlib import Path
 from typing import Optional
 
-from parser.dispatcher import create_dispatcher
-
 VALID_TYPES = {"afp"}
-
 
 def parse_args(argv: Optional[list[str]]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -26,7 +24,6 @@ def parse_args(argv: Optional[list[str]]) -> argparse.Namespace:
         help=f"Type mime du fichier ({", ".join(VALID_TYPES)}). "
     )
     return parser.parse_args(argv)
-
 
 def validate_args(args: argparse.Namespace) -> None:
     path = Path(args.file)
@@ -51,22 +48,11 @@ def build_cli_input(args: argparse.Namespace) -> CliInput:
         filetype=args.type.lower(),
     )
 
+def run(argv: Optional[list[str]] = None):
+    """Main entry point for the CLI"""
 
-def main(argv: Optional[list[str]] = None) -> int:
     args = parse_args(argv)
 
-    try:
-        cli_input = build_cli_input(args)
-        print(cli_input)
-    except ValueError as e:
-        print(f"Erreur de paramètre : {e}")
-        return 2
+    cli_input = build_cli_input(args)
 
-    dispatcher = create_dispatcher(cli_input.path).dispatch(cli_input.filetype)
-    dispatcher.parse()
-
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+    return cli_input

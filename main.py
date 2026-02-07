@@ -1,11 +1,15 @@
+"""
+TaskTracker - CLI afp application
+"""
+
+from cli.cli import run
+from dispatcher import create_dispatcher
 import time
-from stream_sf import SfStreamer
 
-
-def run():
+def parser_handler(parser):
     start_time = time.perf_counter()
 
-    sf_streamer = SfStreamer("../../sample/POC_AFP_PARSE.afp")
+    sf_streamer = parser
     file_size_bytes = sf_streamer.afp_len
     file_size_kb = file_size_bytes / 1024
     file_size_mb = file_size_kb / 1024
@@ -27,8 +31,31 @@ def run():
     print(f"Débit:                    {file_size_mb / elapsed_time:.2f} MB/sec")
     print(f"Latence moyenne par SF:   {(elapsed_time / count) * 1_000_000:.2f} µs")
     print(f"Taille moyenne par SF:    {file_size_bytes / count:.0f} octets")
-    print(f"{'=' * 60}")
+
+def main():
+
+    print("main")
+
+    cli_input = run()
+    if cli_input is None:
+        return 1
+
+    dispatcher = create_dispatcher(cli_input.path)
+    parser = dispatcher.dispatch(cli_input.filetype)
+
+    parser_handler(parser)
+
+    return 0
 
 
 if __name__ == "__main__":
-    run()
+    raise SystemExit(main())
+
+
+
+
+# TODO 1 - Observabilité : Add the logger and call it from the main + Create logo for application
+# TODO 2 - Create a parser handler for manipulating the data (return it from the dispatcher ?)
+# TODO 3 - Add parsing of easy SF data, like BDT, EDT, NOP, IMM and TLE
+# TODO 4 - Gestion des erreurs
+# TODO 5 - Regarder si lib pour mesure de performance
