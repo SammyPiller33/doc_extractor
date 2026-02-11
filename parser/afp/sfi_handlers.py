@@ -58,7 +58,13 @@ class CodeHandler(SfiComponentHandler):
             return None
 
         data = f.read(component.length)
-        return component.name, data
+
+        # Store raw bytes in context for internal use (lookups)
+        if component.name == 'sf_id':
+            context['sf_id_bytes'] = data
+
+        # Return hex string for JSON output
+        return component.name, data.hex().upper()
 
 
 class BitsHandler(SfiComponentHandler):
@@ -77,7 +83,7 @@ class BitsHandler(SfiComponentHandler):
         return component.name, binary_str
 
 
-class RawHandler(SfiComponentHandler):
+class HexaHandler(SfiComponentHandler):
     """Handler for TYPE_RAW (raw bytes as hex)."""
 
     def parse(self, f, component, context: dict) -> Optional[tuple[str, Any]]:
@@ -108,5 +114,5 @@ SFI_HANDLERS = {
     1: UnsignedBinaryHandler(),
     2: CodeHandler(),
     3: BitsHandler(),
-    4: RawHandler(),
+    4: HexaHandler(),
 }

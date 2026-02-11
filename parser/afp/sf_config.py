@@ -2,33 +2,32 @@ from typing import NamedTuple
 
 ####################################
 
-SF_DATA_TYPE_HEXA = 1       # Raw bytes (hex)
-SF_DATA_TYPE_CHAR = 2       # Character data
-SF_DATA_TYPE_TRIPLET = 3    # Triplet
+SF_DATA_CMPNT_TYPE_HEXA = 1       # Raw bytes (hex)
+SF_DATA_CMPNT_TYPE_CHAR = 2       # Character data
+SF_DATA_CMPNT_TYPE_TRIPLETS = 3    # Triplet
 
 class FieldDataComponent(NamedTuple):
     offset: int
     length: int
     name: str
     type: int
+    mandatory: bool
 
 FIELD_DATA_DEFAULT_STRUCTURE: list[FieldDataComponent] = [
-    FieldDataComponent(0, 0, "NA", SF_DATA_TYPE_HEXA)
+    FieldDataComponent(0, 0, "NA", SF_DATA_CMPNT_TYPE_HEXA, True)
 ]
 
 TLE_DATA_STRUCTURE: list[FieldDataComponent] = [
-    FieldDataComponent(0, 0, "FQN", SF_DATA_TYPE_TRIPLET),
-    FieldDataComponent(0, 0, "ATTR_VAL", SF_DATA_TYPE_TRIPLET),
-    FieldDataComponent(0, 0, "NA", SF_DATA_TYPE_HEXA)
+    FieldDataComponent(0, 0, "TRIPLETS", SF_DATA_CMPNT_TYPE_TRIPLETS, True),
 ]
 
 IMM_DATA_STRUCTURE: list[FieldDataComponent] = [
-    FieldDataComponent(0, 7, "MMPName", SF_DATA_TYPE_CHAR),  # Name of the medium map to be invoked
-    FieldDataComponent(8, 0,  "NA", SF_DATA_TYPE_HEXA)
+    FieldDataComponent(0, 7, "MMPName", SF_DATA_CMPNT_TYPE_CHAR, True),  # Name of the medium map to be invoked
+    FieldDataComponent(8, 0,  "NA", SF_DATA_CMPNT_TYPE_HEXA, False)
 ]
 
 NOP_DATA_STRUCTURE: list[FieldDataComponent] = [
-    FieldDataComponent(0, 0, "UndfData", SF_DATA_TYPE_CHAR)
+    FieldDataComponent(0, 0, "UndfData", SF_DATA_CMPNT_TYPE_CHAR, True)
 ]
 
 ####################################
@@ -37,7 +36,7 @@ NOP_DATA_STRUCTURE: list[FieldDataComponent] = [
 class SfConfig(NamedTuple):
     short_name: str
     full_name: str
-    syntax: list[FieldDataComponent]
+    struct: list[FieldDataComponent]
 
 SF_CONFIGS: dict[bytes, SfConfig] = {  # Types of structured fields in MODCA reference
     # ID: SfConfig(short_name, full_name, syntax)

@@ -5,7 +5,8 @@ This module provides the SfStreamer class which allows efficient streaming and p
 of structured fields from AFP files using memory mapping for optimal performance.
 """
 
-from parser.afp.sf_config import SF_CONFIGS, FIELD_DATA_DEFAULT_STRUCTURE, SF_DATA_TYPE_CHAR, SF_DATA_TYPE_TRIPLET
+from parser.afp.sf_config import SF_CONFIGS
+from parser.afp.sf_handlers import SF_HANDLERS
 from parser.file_parser import FileParser
 from parser.afp.sfi_handlers import SFI_HANDLERS
 
@@ -110,7 +111,7 @@ class SfStreamer(FileParser):
     def read_sf(self, f) -> dict | None:
         """
         Read the next structured field from the file.
-        
+
         Returns:
             dict: Parsed SF data if it should be processed, None if filtered out.
         """
@@ -127,8 +128,11 @@ class SfStreamer(FileParser):
         # update the offset for next SF
         self.afp_offset += sfi_data['sf_len'] + 1
 
-        # Get SF name by ID
-        sf_name = SfParser.get_sf_name(sfi_data['sf_id'])
+        # Use the bytes version for lookups
+        sf_id_bytes = sfi_data['sf_id_bytes']
+
+        # Get SF name by ID (using bytes)
+        sf_name = SfParser.get_sf_name(sf_id_bytes)
 
         # Check if this SF should be parsed.
         # The SF must be referenced in sf_config.SF_STRUCTURES and not filtered out.
@@ -139,8 +143,11 @@ class SfStreamer(FileParser):
             f.seek(sfi_data['sf_data_len'], 1)  # 1 = SEEK_CUR (relative to current position)
             return None
 
-        # Parse the data according to its structure
-        sf_data = SfParser.parse_sf_data(f, sfi_data['sf_data_len'], sfi_data['sf_id'])
+        # Parse the data according to its structure (using bytes)
+        sf_data = SfParser.parse_sf_data(f, sfi_data['sf_data_len'], sf_id_bytes)
+
+        # Remove the internal bytes version before returning (keep only hex string)
+        del sfi_data['sf_id_bytes']
 
         # Return data for SFs that should be parsed
         return {
@@ -178,7 +185,10 @@ class SfParser:
                 # Update context with parsed values for dependent fields
                 context[field_name] = value
 
-        sfi_parsed['has_extension'] = context['has_extension']
+        sfi_parsed['has_extension'] = context.get('has_extension', False)
+
+        # Store the bytes version for internal lookups
+        sfi_parsed['sf_id_bytes'] = context.get('sf_id_bytes')
 
         # Calculate SF data length for
         sfi_parsed["sf_data_len"] = sfi_parsed["sf_len"] - 8 - sfi_parsed.get("extension_len", 0)
@@ -193,19 +203,49 @@ class SfParser:
         Args:
             f: Memory-mapped file object.
             data_len: Number of bytes to read.
-            sf_id: 3-byte structured field identifier.
+            sf_id: 3-byte structured field identifier (bytes, not hex string).
 
         Returns:
             dict: Parsed structured field data if configuration exists.
             bytes: Raw bytes if FIELD_BASE_STRUCTURE or no configuration.
         """
-        sf_pased = {}
+        sf_parsed = {}
+        sf_config = SF_CONFIGS.get(sf_id, None)
 
+        if not sf_config:
+            # SF inconnu : on lit en hexa brut
+            handler = SF_HANDLERS.get(1)
+            sf_parsed["NA"] = handler.parse(f, data_len)
+        else:
+            structure = sf_config.struct
+            bytes_read = 0
 
+            for component in structure:
+                handler = SF_HANDLERS.get(component.type)
 
+                if not handler:
+                    # Si pas de handler, skip les bytes
+                    if component.length > 0:
+                        f.read(component.length)
+                        bytes_read += component.length
+                    continue
 
+                # Calculer la longueur réelle pour les composants à longueur variable
+                comp_length = component.length
+                if comp_length == 0:
+                    # Longueur variable = reste des données
+                    comp_length = data_len - bytes_read
 
-        pass
+                # Parser le composant
+                value = handler.parse(f, comp_length)
+
+                # Ajouter au dictionnaire seulement si non-None
+                if value is not None:
+                    sf_parsed[component.name] = value
+
+                bytes_read += comp_length
+
+        return sf_parsed
 
     @staticmethod
     def get_sf_name(sf_id: bytes) -> str:
@@ -213,7 +253,7 @@ class SfParser:
         Get the structured field name from its ID.
 
         Args:
-            sf_id: 3-byte structured field identifier.
+            sf_id: 3-byte structured field identifier (bytes, not hex string).
 
         Returns:
             str: Short name of the SF or "NA" if unknown.
