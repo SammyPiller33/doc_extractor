@@ -25,13 +25,27 @@ class AFPStreamProcessor(Processor):
 
         start_time = time.perf_counter()
         sf_count = 0
+        error_count = 0
 
         self.logger.info(f"Processing AFP stream : {cli_output_path}")
-        with self.writer as writer:
-            for sf in self.parser.stream():
-                sf_count += 1
-                writer.write(sf)
 
-        elapsed_time = time.perf_counter() - start_time
-        self.logger.info(
-            f"Traitement terminé : {sf_count} SF en {elapsed_time:.3f}s ({sf_count / elapsed_time:.0f} SF/s)")
+        try:
+            with self.writer as writer:
+                for sf in self.parser.stream():
+                    try:
+                        sf_count += 1
+                        writer.write(sf)
+                    except Exception as e:
+                        error_count += 1
+                        self.logger.warning(f"Error processing SF #{sf_count}: {e}")
+                        # Continue processing or raise based on config
+
+        except Exception as e:
+            self.logger.error(f"Fatal error during processing: {e}")
+            raise
+        finally:
+            elapsed_time = time.perf_counter() - start_time
+            self.logger.info(
+                f"Traitement terminé : {sf_count} SF en {elapsed_time:.3f}s "
+                f"({sf_count / elapsed_time:.0f} SF/s) - {error_count} erreurs"
+            )
