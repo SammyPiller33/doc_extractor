@@ -65,7 +65,7 @@ class SfStreamer(FileParser):
         except OSError as e:
             raise OSError(f"Impossible de lire les informations du fichier '{afp_path}': {e}")
         
-        # Store the filter
+        # Store the filter : initiliazed as if no config...
         self.sf_filter = SfFilter()
 
     def set_config(self, config: SfFilter) -> None:

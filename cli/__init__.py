@@ -1,5 +1,5 @@
 """
-cli
+cli interface for AFP Parser application
 """
 
 __version__ = "1.0.0"

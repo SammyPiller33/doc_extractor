@@ -34,7 +34,7 @@ def get_logger(name: str) -> logging.Logger:
     # ===== Rotating file handler =====
     # RotatingFileHandler creates a new log file when it gets a certain size.
     file_handler = RotatingFileHandler(
-        filename="../app.log",       # Name of the log file
+        filename="./app.log",       # Name of the log file
         maxBytes=2_000_000,         # Max size before rotation (~2 Mo)
         backupCount=5,              # Number of kept log files
         encoding="utf-8",           # File encoding: defines how characters are converted into bytes.
