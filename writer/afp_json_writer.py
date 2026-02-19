@@ -1,5 +1,5 @@
 import orjson
-from domain.afp import Afp, Document, Page
+from domain.afp import Afp, Document, Page, Tle
 
 from writer.writer import Writer
 
@@ -7,15 +7,17 @@ from writer.writer import Writer
 class AFPJsonWriter(Writer):
     """Efficient streaming JSON writer for AFP documents."""
 
-    def __init__(self, output_path: str, buffer_size: int = 100):
+    def __init__(self, afp_file_name, output_path: str, buffer_size: int = 100):
         super().__init__(output_path, buffer_size=buffer_size)
         self._buffer_size = buffer_size
         self._buffer = []
         self._file = None
         self._is_first = True
 
+        self._afp_file_name = afp_file_name
+
         # State tracking
-        self._cur_afp = None
+        self._afp = None
         self._curr_doc = None
         self._doc_count = 0
         self._curr_page = None
@@ -25,16 +27,22 @@ class AFPJsonWriter(Writer):
 
     def __enter__(self):
         self._file = open(self.output_path, 'wb')
-        self._file.write(b'{\n  "data": [\n')
+        self._file.write(b'{\n  "documents": [\n')
 
-        self._cur_afp = Afp(name="AFP1")
-        self._curr_obj = self._cur_afp
+        self._afp = Afp(name=self._afp_file_name)
+        self._curr_obj = self._afp
 
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.flush()
-        self._file.write(b'\n  ]\n}')
+
+        self._file.write(b'\n  ],\n  "afp": ')
+        self._afp.set_nb_of_docs(self._doc_count)
+        self._afp.set_nb_of_pages(self._page_count)
+        self._file.write(orjson.dumps(self._afp.model_dump()))
+
+        self._file.write(b'\n}')
         self._file.close()
 
     def write(self, data: dict) -> None:
@@ -59,7 +67,7 @@ class AFPJsonWriter(Writer):
         if self._doc_count % self._buffer_size == 0:
             self.flush()
 
-        self._curr_doc = Document(name=f"Doc{self._doc_count}")
+        self._curr_doc = Document(doc_number=f"{self._doc_count}")
         self._curr_obj = self._curr_doc
         self._buffer.append(self._curr_doc)
 
@@ -67,7 +75,7 @@ class AFPJsonWriter(Writer):
         """Handle BPG (Begin Page) - start of page."""
         self._page_count += 1
         self._curr_page = Page(
-            name=f"Page{self._page_count}",
+            page_number=f"{self._page_count}",
             bac_papier=self._cur_media
         )
         self._curr_doc.add_page(self._curr_page)
@@ -90,7 +98,7 @@ class AFPJsonWriter(Writer):
         )
 
         if tle_name:
-            self._curr_obj.add_tle({tle_name: tle_value})
+            self._curr_obj.add_tle(Tle(name=tle_name, value=tle_value))
 
     def _handle_no_operation(self, data: dict):
         """Handle NOP (No Operation) - comment/annotation."""
@@ -118,3 +126,4 @@ class AFPJsonWriter(Writer):
         self._file.write(content)
         self._buffer.clear()
         self._is_first = False
+

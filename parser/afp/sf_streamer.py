@@ -51,10 +51,10 @@ class SfStreamer(FileParser):
         super().__init__(afp_path)
 
         if not self._path.exists():
-            raise FileNotFoundError(f"Le fichier '{afp_path}' n'existe pas.")
+            raise FileNotFoundError(f"The file '{afp_path}' does not exist.")
 
         if not self._path.is_file():
-            raise ValueError(f"Le chemin '{afp_path}' n'est pas un fichier.")
+            raise ValueError(f"The path '{afp_path}' is not a file.")
 
         # Initialize the offset and length of the AFP file.
         # The offset is set to 0 and incremented as structured fields are read.
@@ -63,7 +63,7 @@ class SfStreamer(FileParser):
         try:
             self.afp_len = self._path.stat().st_size
         except OSError as e:
-            raise OSError(f"Impossible de lire les informations du fichier '{afp_path}': {e}")
+            raise OSError(f"Cannot read file information for '{afp_path}': {e}")
         
         # Store the filter : initiliazed as if no config...
         self.sf_filter = SfFilter()
@@ -101,12 +101,12 @@ class SfStreamer(FileParser):
                             if sf_data is not None:
                                 yield sf_data
                         except EOFError:
-                            raise EOFError(f"Fin de fichier inattendue à l'offset {self.afp_offset}")
+                            raise EOFError(f"Unexpected end of file at offset {self.afp_offset}")
                         except ValueError as e:
-                            raise ValueError(f"Erreur de structure AFP à l'offset {self.afp_offset}: {e}")
+                            raise ValueError(f"AFP structure error at offset {self.afp_offset}: {e}")
 
         except OSError as e:
-            raise OSError(f"Erreur d'accès au fichier: {e}")
+            raise OSError(f"File access error: {e}")
 
     def read_sf(self, f) -> dict | None:
         """
@@ -117,12 +117,12 @@ class SfStreamer(FileParser):
         """
         f.seek(self.afp_offset, 0)
 
-        # Tous les champs structurés sont délimités par un contrôle de ligne
+        # All structured fields are delimited by a line control
         control = f.read(1)
         if control != CARRIAGE_CONTROL:
-            raise ValueError("Le fichier n'est pas un fichier AFP conforme")
+            raise ValueError("The file is not a valid AFP file")
 
-        # Un champ structuré débute un SFI (Structured Field Introducer)
+        # A structured field starts with an SFI (Structured Field Introducer)
         sfi_data = SfParser.parse_sfi(f)
 
         # update the offset for next SF
@@ -213,7 +213,7 @@ class SfParser:
         sf_config = SF_CONFIGS.get(sf_id, None)
 
         if not sf_config:
-            # SF inconnu : on lit en hexa brut
+            # Unknown SF: read as raw hex
             handler = SF_HANDLERS.get(1)
             sf_parsed["NA"] = handler.parse(f, data_len)
         else:
@@ -224,22 +224,22 @@ class SfParser:
                 handler = SF_HANDLERS.get(component.type)
 
                 if not handler:
-                    # Si pas de handler, skip les bytes
+                    # If no handler, skip the bytes
                     if component.length > 0:
                         f.read(component.length)
                         bytes_read += component.length
                     continue
 
-                # Calculer la longueur réelle pour les composants à longueur variable
+                # Calculate actual length for variable-length components
                 comp_length = component.length
                 if comp_length == 0:
-                    # Longueur variable = reste des données
+                    # Variable length = remaining data
                     comp_length = data_len - bytes_read
 
-                # Parser le composant
+                # Parse the component
                 value = handler.parse(f, comp_length)
 
-                # Ajouter au dictionnaire seulement si non-None
+                # Add to dictionary only if non-None
                 if value is not None:
                     sf_parsed[component.name] = value
 

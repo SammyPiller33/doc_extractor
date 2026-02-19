@@ -2,7 +2,7 @@ from pathlib import Path
 
 
 class FileParser:
-    """Interface simple pour les parsers de fichiers."""
+    """Simple interface for file parsers."""
     def __init__(self, path: str) -> None:
         self._path = Path(path)
 

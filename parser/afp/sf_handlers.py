@@ -64,7 +64,7 @@ class TripletHandler(SfComponentHandler):
             t_config = TRIPLET_CONFIG.get(t_id, None)
 
             if not t_config:
-                # Triplet inconnu : on lit le contenu brut
+                # Unknown triplet: read raw content
                 content = (t_len.to_bytes(1, 'big') + t_id + f.read(t_len - 2)).hex().upper()
                 triplets.append({
                     "NA": content
@@ -73,11 +73,11 @@ class TripletHandler(SfComponentHandler):
                 t_name = t_config.short_name
                 t_struct = t_config.struct
 
-                # Dictionnaire pour stocker tous les composants du triplet
+                # Dictionary to store all triplet components
                 triplet_data = {}
 
-                # Position de lecture relative au début du triplet
-                bytes_read = 2  # t_len + t_id déjà lus
+                # Read position relative to the start of the triplet
+                bytes_read = 2  # t_len + t_id already read
 
                 for component in t_struct:
                     handler = TRIPLET_HANDLERS.get(component.type, None)
@@ -85,22 +85,22 @@ class TripletHandler(SfComponentHandler):
                     if not handler:
                         continue
 
-                    # Calculer la longueur réelle pour les composants à longueur variable
+                    # Calculate actual length for variable-length components
                     comp_length = component.length
                     if comp_length == 0:
-                        # Longueur variable = reste du triplet
+                        # Variable length = remaining triplet data
                         comp_length = t_len - bytes_read
 
-                    # Parser le composant
+                    # Parse the component
                     value = handler.parse(f, comp_length)
 
-                    # Ajouter au dictionnaire seulement si non-None
+                    # Add to dictionary only if non-None
                     if value is not None:
                         triplet_data[component.name] = value
 
                     bytes_read += comp_length
 
-                # Ajouter le triplet complet
+                # Add the complete triplet
                 triplets.append({
                     t_name: triplet_data
                 })

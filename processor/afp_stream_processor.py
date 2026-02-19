@@ -13,7 +13,7 @@ class AFPStreamProcessor(Processor):
             try:
                 sf_filter = SfFilter(config_path)
                 self.parser.set_config(sf_filter)
-                self.logger.info(f"Filtre SF chargé : {sf_filter.get_filter_info()}")
+                self.logger.info(f"SF filter loaded : {sf_filter.get_filter_info()}")
             except (ValueError, FileNotFoundError) as e:
                 self.logger.error(f"Error in charging the filter : {e}")
 

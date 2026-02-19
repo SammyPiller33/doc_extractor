@@ -2,6 +2,7 @@
 AfpParser - CLI afp application
 """
 import time
+from pathlib import Path
 
 from cli.cli import run
 from dispatcher import init_dispatcher
@@ -59,7 +60,7 @@ def main():
     output_path = cli_input.path.replace('.afp', f'_structure.{cli_input.output_format}')
 
     # Create and inject the writer based on the output format
-    writer = create_writer(cli_input.output_format, output_path)
+    writer = create_writer(cli_input.output_format, Path(cli_input.path).name, output_path)
     
     t4 = time.perf_counter()
     logger.info(f"[TIMING] After create_writer: {t4 - t3:.3f}s")
@@ -78,8 +79,3 @@ def main():
 if __name__ == "__main__":
     # Execute main() and use its return value as the exit code
     raise SystemExit(main())
-
-# TODO abstraction des writers
-# TODO Gestion de la config
-# TODO gestion des erreurs
-# TODO tests
