@@ -13,29 +13,29 @@ def parse_args(argv: Optional[list[str]]) -> argparse.Namespace:
     """Parse command line arguments"""
 
     parser = argparse.ArgumentParser(
-        description=f"Outil de parsing de fichiers ({", ".join(VALID_TYPES)})."
+        description=f"File parsing tool ({", ".join(VALID_TYPES)})."
     )
     parser.add_argument(
         "-f", "--file",
         required=True,
-        help="Chemin complet du fichier à analyser",
+        help="Full path to the file to analyze",
     )
     parser.add_argument(
         "-t", "--type",
         required=True,
         choices=sorted(VALID_TYPES),
-        help=f"Type mime du fichier ({", ".join(VALID_TYPES)}). "
+        help=f"File mime type ({", ".join(VALID_TYPES)}). "
     )
     parser.add_argument(
         "-c", "--config",
         required=False,
-        help="Chemin vers un fichier JSON de configuration",
+        help="Path to a JSON configuration file",
     )
     parser.add_argument(
         "-o", "--output-format",
         default="json",
         choices=sorted(OUTPUT_FORMATS),
-        help="Format de sortie (json par défaut)"
+        help="Output format (json by default)"
     )
     return parser.parse_args(argv)
 
@@ -44,16 +44,16 @@ def validate_args(args: argparse.Namespace) -> None:
     path = Path(args.file)
 
     if not path.exists():
-        raise ValueError(f"Fichier introuvable : {path}")
+        raise ValueError(f"File not found: {path}")
     if not path.is_file():
-        raise ValueError(f"Le chemin correspondant n'est pas un fichier : {path}")
+        raise ValueError(f"The specified path is not a file: {path}")
 
     if args.config:
         config_path = Path(args.config)
         if not config_path.exists():
-            raise ValueError(f"Fichier de configuration introuvable : {config_path}")
+            raise ValueError(f"Configuration file not found: {config_path}")
         if not config_path.is_file():
-            raise ValueError(f"Le chemin de configuration n'est pas un fichier : {config_path}")
+            raise ValueError(f"The configuration path is not a file: {config_path}")
 
 @dataclass(frozen=True)
 class CliInput:
