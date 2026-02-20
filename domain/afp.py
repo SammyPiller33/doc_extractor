@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional, Any
+from typing import List, Optional
 
 
 class Tle(BaseModel):
@@ -12,6 +12,7 @@ class Tle(BaseModel):
         json_encoders = {
             bytes: lambda v: v.hex()
         }
+
 
 class Page(BaseModel):
     """Represents an afp page (BPG)."""
@@ -40,10 +41,12 @@ class Page(BaseModel):
 class Document(BaseModel):
     """Represents a group of pages (i.e. BNG) in an AFP file."""
 
+    afp_filename: str = Field(default=None, description="AFP file name")
     doc_number: str = Field(default=None, description="Document number")
     pages: List[Page] = Field(default_factory=list, description="Document pages list")
     tle: Optional[list[Tle]] = Field(default=[], description="Document-specific TLEs")
     nop: Optional[list[str]] = Field(default=[], description="Document-specific NOPs")
+    nb_of_pages: str = Field(default="0", description="Number of pages in the document")
 
     def add_page(self, page: Page) -> None:
         """Add a file to the document."""
@@ -57,6 +60,9 @@ class Document(BaseModel):
         """Add a nop to the document."""
         self.nop.append(nop)
 
+    def set_nb_of_pages(self) -> None:
+        self.nb_of_pages = str(len(self.pages))
+
     class Config:
         json_encoders = {
             bytes: lambda v: v.hex()
@@ -68,21 +74,20 @@ class Afp(BaseModel):
 
     name: str = Field(default=None, description="AFP file name")
     nop: Optional[list[str]] = Field(default=[], description="AFP-specific NOPs")
-    nb_of_docs: int = Field(default=0, description="Number of documents in the AFP file")
-    nb_of_pages: int = Field(default=0, description="Number of pages in the AFP file")
+    nb_of_docs: str = Field(default="0", description="Number of documents in the AFP file")
+    nb_of_pages: str = Field(default="0", description="Number of pages in the AFP file")
 
     def add_nop(self, nop: str) -> None:
         """Add a nop to the document."""
         self.nop.append(nop)
 
-    def set_nb_of_docs(self, nb_of_docs: int) -> None:
+    def set_nb_of_docs(self, nb_of_docs: str) -> None:
         self.nb_of_docs = nb_of_docs
 
-    def set_nb_of_pages(self, nb_of_pages: int) -> None:
+    def set_nb_of_pages(self, nb_of_pages: str) -> None:
         self.nb_of_pages = nb_of_pages
 
     class Config:
         json_encoders = {
             bytes: lambda v: v.hex()
         }
-

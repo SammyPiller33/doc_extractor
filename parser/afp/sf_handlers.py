@@ -96,7 +96,7 @@ class TripletHandler(SfComponentHandler):
 
                     # Add to dictionary only if non-None
                     if value is not None:
-                        triplet_data[component.name] = value
+                        triplet_data[component.name] = value.lstrip('0')
 
                     bytes_read += comp_length
 

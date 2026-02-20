@@ -8,7 +8,7 @@ class AFPJsonWriter(Writer):
     """Efficient streaming JSON writer for AFP documents."""
 
     def __init__(self, afp_file_name, output_path: str, buffer_size: int = 100):
-        super().__init__(output_path, buffer_size=buffer_size)
+        super().__init__(output_path)
         self._buffer_size = buffer_size
         self._buffer = []
         self._file = None
@@ -27,7 +27,7 @@ class AFPJsonWriter(Writer):
 
     def __enter__(self):
         self._file = open(self.output_path, 'wb')
-        self._file.write(b'{\n  "documents": [\n')
+        self._file.write(b'{\n"documents":[\n')
 
         self._afp = Afp(name=self._afp_file_name)
         self._curr_obj = self._afp
@@ -35,11 +35,14 @@ class AFPJsonWriter(Writer):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+
+        self._curr_doc.set_nb_of_pages()
+
         self.flush()
 
-        self._file.write(b'\n  ],\n  "afp": ')
-        self._afp.set_nb_of_docs(self._doc_count)
-        self._afp.set_nb_of_pages(self._page_count)
+        self._file.write(b'\n],\n"afp": ')
+        self._afp.set_nb_of_docs(str(self._doc_count))
+        self._afp.set_nb_of_pages(str(self._page_count))
         self._file.write(orjson.dumps(self._afp.model_dump()))
 
         self._file.write(b'\n}')
@@ -67,7 +70,11 @@ class AFPJsonWriter(Writer):
         if self._doc_count % self._buffer_size == 0:
             self.flush()
 
-        self._curr_doc = Document(doc_number=f"{self._doc_count}")
+        if self._curr_doc:
+            self._curr_doc.set_nb_of_pages()
+            self._page_count = 0
+
+        self._curr_doc = Document(afp_filename = self._afp_file_name, doc_number=f"{self._doc_count}")
         self._curr_obj = self._curr_doc
         self._buffer.append(self._curr_doc)
 
@@ -120,8 +127,8 @@ class AFPJsonWriter(Writer):
             for doc in self._buffer
         ]
 
-        prefix = b'    ' if self._is_first else b',\n    '
-        content = prefix + b',\n    '.join(serialized)
+        prefix = b'' if self._is_first else b',\n    '
+        content = prefix + b',\n'.join(serialized)
 
         self._file.write(content)
         self._buffer.clear()
